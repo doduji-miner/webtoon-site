@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebToon Viewer 2000 - 뷰어</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a246a'/%3E%3Crect x='2' y='2' width='12' height='12' fill='%23a6caf0'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="win-window">
+  <div class="title-bar">
+    <div class="title-bar-text">
+      <span class="title-bar-icon">W</span>
+      <span id="title-bar-text">WebToon Viewer 2000 - 뷰어</span>
+    </div>
+    <div class="title-bar-controls">
+      <span>_</span><span>&#9633;</span><span>&#10005;</span>
+    </div>
+  </div>
+
+  <nav class="menu-bar">
+    <a href="index.html">홈</a>
+    <a id="menu-series-link" href="index.html">작품으로</a>
+    <a href="upload.html">작가 업로드</a>
+  </nav>
+
+  <div class="window-content" id="content-area">
+    <!-- JS로 채워짐 -->
+  </div>
+
+  <div class="status-bar">
+    <span id="status-left">패널 0개</span>
+    <span>WebToon Viewer 2000 - 세로 스크롤 모드</span>
+  </div>
+</div>
+
+<!-- 댓글을 모든 방문자에게 공유하려면 js/firebase-config.js 를 채우세요.
+     (README.md의 "댓글을 실시간으로 공유하기" 항목 참고) -->
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/viewer.js"></script>
+</body>
+</html>

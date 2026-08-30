@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebToon Viewer 2000 - 웹툰 목록</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a246a'/%3E%3Crect x='2' y='2' width='12' height='12' fill='%23a6caf0'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="win-window">
+  <div class="title-bar">
+    <div class="title-bar-text">
+      <span class="title-bar-icon">W</span>
+      WebToon Viewer 2000 - 전체 작품
+    </div>
+    <div class="title-bar-controls">
+      <span>_</span><span>&#9633;</span><span>&#10005;</span>
+    </div>
+  </div>
+
+  <nav class="menu-bar">
+    <a href="index.html" class="active">홈</a>
+    <a href="index.html#genre">장르</a>
+    <a href="upload.html">작가 업로드</a>
+  </nav>
+
+  <div class="window-content">
+    <div class="toolbar raised" id="genre">
+      <form class="search-box" onsubmit="return false;">
+        <input type="search" id="search-input" placeholder="작품명 또는 작가명 검색...">
+      </form>
+      <div id="genre-chips" class="card-meta" style="gap:4px;"></div>
+    </div>
+
+    <div id="result-count" class="hint" style="margin-bottom:8px;"></div>
+
+    <div id="card-grid" class="card-grid"></div>
+  </div>
+
+  <div class="status-bar">
+    <span id="status-total">작품 0개</span>
+    <span id="status-storage">WebToon Viewer 2000</span>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
