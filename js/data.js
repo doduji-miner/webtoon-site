@@ -140,6 +140,26 @@
     }
   })();
 
+  // ---- Cloudinary(이미지 업로드) 연동 -----------------------------------
+  // js/cloudinary-config.js 에 실제 cloudName/uploadPreset을 채워 넣으면
+  // 작가 업로드 페이지에서 세로로 긴 웹툰 PNG를 실제로 올릴 수 있습니다.
+  // 설정하지 않으면 이미지 업로드 없이(자리표시 패널만) 동작합니다.
+  var cloudinaryReady = false;
+  (function initCloudinary() {
+    try {
+      var cfg = global.CLOUDINARY_CONFIG;
+      cloudinaryReady = !!(
+        cfg &&
+        cfg.cloudName &&
+        cfg.uploadPreset &&
+        cfg.cloudName.indexOf("여기에") === -1 &&
+        cfg.uploadPreset.indexOf("여기에") === -1
+      );
+    } catch (e) {
+      cloudinaryReady = false;
+    }
+  })();
+
   function readJSON(key, fallback) {
     try {
       var raw = localStorage.getItem(key);
@@ -301,6 +321,7 @@
                 title: d.title,
                 date: d.date,
                 panelCount: d.panelCount,
+                imageUrl: d.imageUrl || null,
                 likes: d.likes || 0
               });
             });
@@ -374,6 +395,7 @@
           title: episode.title,
           date: episode.date,
           panelCount: episode.panelCount,
+          imageUrl: episode.imageUrl || null,
           likes: 0
         });
         return Promise.resolve(localId);
@@ -385,12 +407,54 @@
           title: episode.title,
           date: episode.date,
           panelCount: episode.panelCount,
+          imageUrl: episode.imageUrl || null,
           likes: 0,
           createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(function (ref) {
           return ref.id;
         });
+    },
+
+    // ---- 웹툰 이미지 업로드: Cloudinary 연동 -----------------------------
+    isImageUploadEnabled: function () {
+      return cloudinaryReady;
+    },
+
+    // 이미지 파일을 Cloudinary에 업로드하고 Promise<이미지 URL>을 반환한다.
+    // Cloudinary 미설정 시에는 이 함수를 호출하지 않는 쪽(upload.js)에서 걸러낸다.
+    uploadEpisodeImage: function (file) {
+      if (!cloudinaryReady) {
+        return Promise.reject(new Error("Cloudinary가 설정되지 않았습니다."));
+      }
+      var cfg = global.CLOUDINARY_CONFIG;
+      var formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", cfg.uploadPreset);
+
+      var url = "https://api.cloudinary.com/v1_1/" + cfg.cloudName + "/image/upload";
+
+      return fetch(url, { method: "POST", body: formData }).then(function (res) {
+        if (!res.ok) {
+          return res.json().then(
+            function (errBody) {
+              throw new Error(
+                (errBody && errBody.error && errBody.error.message) ||
+                  "이미지 업로드에 실패했습니다 (" + res.status + ")"
+              );
+            },
+            function () {
+              throw new Error("이미지 업로드에 실패했습니다 (" + res.status + ")");
+            }
+          );
+        }
+        return res.json();
+      }).then(function (data) {
+        if (!data || !data.secure_url) {
+          throw new Error("이미지 업로드 응답이 올바르지 않습니다.");
+        }
+        return data.secure_url;
+      });
     },
 
     likeKey: function (seriesId, episodeId) {

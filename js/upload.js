@@ -10,6 +10,8 @@
     "#3a6a4a", "#4a2b6a", "#2b5a7a", "#7a3a2b"
   ];
 
+  var MAX_IMAGE_BYTES = 10 * 1024 * 1024; // Cloudinary 무료 플랜 이미지 업로드 한도(10MB)와 동일
+
   function escapeHTML(str) {
     var div = document.createElement("div");
     div.textContent = str == null ? "" : String(str);
@@ -127,6 +129,8 @@
     var date = document.getElementById("e-date").value || todayStr();
     var panelsRaw = document.getElementById("e-panels").value.trim();
     var panelCount = parseInt(panelsRaw, 10);
+    var imageInput = document.getElementById("e-image");
+    var imageFile = imageInput.files && imageInput.files[0];
 
     if (!seriesId) {
       showResult("episode-result", "작품을 먼저 등록해 주세요.", false);
@@ -139,12 +143,37 @@
     if (!panelCount || panelCount < 1) panelCount = 5;
     if (panelCount > 20) panelCount = 20;
 
+    if (imageFile && !WebtoonStore.isImageUploadEnabled()) {
+      showResult(
+        "episode-result",
+        "이미지 업로드는 Cloudinary 설정이 필요합니다. js/cloudinary-config.js를 채워주세요 (README 참고). 지금은 이미지 없이 등록해 주세요.",
+        false
+      );
+      return;
+    }
+    if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
+      showResult("episode-result", "이미지 용량이 너무 큽니다 (최대 10MB).", false);
+      return;
+    }
+
     submitBtn.disabled = true;
-    WebtoonStore.addEpisodeToSeriesAsync(seriesId, {
-      title: title,
-      date: date,
-      panelCount: panelCount
-    })
+
+    var uploadStep = imageFile
+      ? (function () {
+          showResult("episode-result", "이미지 업로드 중...", true);
+          return WebtoonStore.uploadEpisodeImage(imageFile);
+        })()
+      : Promise.resolve(null);
+
+    uploadStep
+      .then(function (imageUrl) {
+        return WebtoonStore.addEpisodeToSeriesAsync(seriesId, {
+          title: title,
+          date: date,
+          panelCount: panelCount,
+          imageUrl: imageUrl
+        });
+      })
       .then(function (episodeId) {
         document.getElementById("episode-form").reset();
         document.getElementById("e-panels").value = 5;
@@ -160,7 +189,11 @@
       })
       .catch(function (err) {
         console.error("[upload] 회차 등록 실패:", err);
-        showResult("episode-result", "회차 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", false);
+        showResult(
+          "episode-result",
+          "회차 등록에 실패했습니다: " + (err && err.message ? err.message : "알 수 없는 오류"),
+          false
+        );
       })
       .finally(function () {
         submitBtn.disabled = false;
@@ -169,20 +202,38 @@
 
   function renderStorageNotice() {
     var el = document.getElementById("storage-notice");
+    var lines = [];
     if (WebtoonStore.isRemoteContentEnabled()) {
-      el.innerHTML =
-        "이 사이트는 Firebase(Firestore)와 연동되어 있습니다. 여기서 등록한 작품/회차는 " +
-        "<b>모든 방문자에게</b> 보입니다. (표지 이미지는 아직 지원하지 않아 대표 색상으로 대체됩니다)";
+      lines.push(
+        "이 사이트는 Firebase(Firestore)와 연동되어 있습니다. 여기서 등록한 작품/회차는 <b>모든 방문자에게</b> 보입니다."
+      );
     } else {
-      el.innerHTML =
-        "아직 Firebase가 설정되지 않았습니다. 지금 등록하는 작품/회차는 " +
-        "<b>이 브라우저에만</b> 저장되며 다른 사람에게는 보이지 않습니다. " +
-        "js/firebase-config.js를 설정하면 모두에게 공유됩니다. (README 참고)";
+      lines.push(
+        "아직 Firebase가 설정되지 않았습니다. 지금 등록하는 작품/회차는 <b>이 브라우저에만</b> 저장되며 다른 사람에게는 보이지 않습니다. js/firebase-config.js를 설정하면 모두에게 공유됩니다. (README 참고)"
+      );
+    }
+    if (WebtoonStore.isImageUploadEnabled()) {
+      lines.push("웹툰 이미지 업로드(Cloudinary)도 연동되어 있어 실제 원고 이미지를 올릴 수 있습니다.");
+    } else {
+      lines.push(
+        "이미지 업로드는 아직 설정되지 않아 비활성화되어 있습니다. js/cloudinary-config.js를 설정하면 실제 이미지를 올릴 수 있습니다. (README 참고)"
+      );
+    }
+    el.innerHTML = lines.join(" ");
+  }
+
+  function applyImageUploadAvailability() {
+    var imageInput = document.getElementById("e-image");
+    var hint = document.getElementById("e-image-hint");
+    if (!WebtoonStore.isImageUploadEnabled()) {
+      imageInput.disabled = true;
+      hint.textContent = "이미지 업로드가 아직 설정되지 않았습니다. (README의 Cloudinary 연동 참고)";
     }
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     renderStorageNotice();
+    applyImageUploadAvailability();
     buildGenreCheckboxes();
     buildSeriesSelect();
     document.getElementById("e-date").value = todayStr();

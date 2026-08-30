@@ -40,6 +40,13 @@
   }
 
   function panelStackHTML(series, episode) {
+    if (episode.imageUrl) {
+      return (
+        '<div class="panel-stack">' +
+          '<img class="panel-image" src="' + episode.imageUrl + '" alt="' + escapeHTML(episode.title) + '" loading="lazy">' +
+        "</div>"
+      );
+    }
     var count = episode.panelCount || 5;
     var panels = [];
     for (var i = 0; i < count; i++) {
@@ -197,8 +204,9 @@
       topNavHTML +
       commentsHTML;
 
-    document.getElementById("status-left").textContent =
-      "패널 " + (episode.panelCount || 5) + "개";
+    document.getElementById("status-left").textContent = episode.imageUrl
+      ? "이미지 원고"
+      : "패널 " + (episode.panelCount || 5) + "개";
 
     if (unsubscribeComments) {
       unsubscribeComments();

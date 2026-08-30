@@ -28,8 +28,9 @@ GitHub Pages 같은 정적 호스팅에 바로 배포할 수 있습니다.
 올리고 볼 수 있는 게시판 형태입니다).
 
 설정하지 않아도 사이트는 정상적으로 작동합니다(자동으로 이전처럼 이
-브라우저에만 저장되는 방식으로 폴백). 표지·원고 이미지 업로드나 회원 인증처럼
-더 큰 기능이 필요하면 `js/data.js`의 `WebtoonStore` 객체를 확장하면 됩니다
+브라우저에만 저장되는 방식으로 폴백). 실제 웹툰 원고 이미지 업로드는
+아래의 "Cloudinary 연동" 섹션에서 별도로 설정합니다. 회원 인증처럼 더 큰
+기능이 필요하면 `js/data.js`의 `WebtoonStore` 객체를 확장하면 됩니다
 (현재 구조상 화면 코드는 이 파일의 함수만 바꾸면 재사용할 수 있습니다).
 
 ## 🔥 Firebase로 모두에게 공유하기 (업로드 · 좋아요 · 댓글)
@@ -169,12 +170,72 @@ service cloud.firestore {
 전환이 필요할 수 있습니다. (Firebase 콘솔의 "사용량 및 청구" 메뉴에서 최신
 한도를 확인하세요.)
 
-## 실제 웹툰 이미지로 교체하기
+## 🖼️ 실제 웹툰 이미지 올리기 (Cloudinary 연동)
 
-현재 회차 뷰어는 실제 원고 이미지 대신 색상 블록(플레이스홀더 패널)을
-세로로 이어 붙여 보여줍니다. `js/viewer.js`의 `panelStackHTML` 함수 안에서
-`<div class="panel">...</div>` 부분을 실제 `<img>` 태그로 교체하면
-진짜 웹툰 컷 이미지를 세로 스크롤로 보여줄 수 있습니다.
+`js/upload.js`의 회차 추가 폼에는 세로로 긴 PNG/JPG 이미지를 올리는 파일
+선택 칸이 있습니다. 이 칸에 이미지를 올려서 등록하면, 색상 블록(플레이스홀더
+패널) 대신 실제 이미지가 뷰어에서 그대로 세로 스크롤로 보입니다.
+
+이미지 업로드는 **Cloudinary**(무료 플랜, 카드 등록 불필요)를 통해 저장됩니다.
+Firestore는 문서 하나에 1MB 제한이 있어 이미지 자체를 담기에 적합하지 않고,
+Firebase Storage는 새 프로젝트의 경우 유료(Blaze) 요금제 전환이 필요해
+Cloudinary를 대신 사용합니다. 설정하지 않아도 사이트는 정상 작동하며(이미지
+칸이 비활성화되고 이전처럼 플레이스홀더 패널만 사용), 설정하면 실제 이미지
+업로드가 켜집니다.
+
+**1) Cloudinary 무료 회원가입**
+
+1. https://cloudinary.com 접속 → "Sign up free"로 회원가입 (신용카드 불필요)
+2. 로그인하면 대시보드가 보입니다.
+
+**2) Cloud name 확인**
+
+대시보드 상단(또는 "Product Environment Credentials" 영역)에 표시되는
+**Cloud name** 값을 복사해 둡니다. (예: `dxxxxxxxx`)
+
+**3) Unsigned 업로드 프리셋 만들기**
+
+이미지 업로드를 이 사이트처럼 서버 없는 정적 페이지에서 바로 하려면
+"서명 없는(Unsigned)" 업로드 프리셋이 필요합니다.
+
+1. 오른쪽 위 톱니바퀴(Settings) 아이콘 클릭
+2. **Upload** 탭 선택 → 아래로 스크롤해서 **Upload presets** 항목 찾기
+3. **Add upload preset** 클릭
+4. **Signing Mode**를 반드시 **Unsigned**로 변경
+5. (선택, 권장) **Folder**에 `webtoon` 같은 이름을 지정해 두면 나중에
+   Cloudinary 미디어 라이브러리에서 이 사이트가 올린 이미지만 모아보기 쉽습니다.
+6. **Save** 클릭 후, 방금 만든 프리셋 이름을 복사합니다. (예: `ml_default`처럼
+   기본 제공 프리셋이 아니라 방금 만든 이름을 써야 합니다.)
+
+**4) 설정값 채우기**
+
+`js/cloudinary-config.js` 파일을 열어 아래처럼 채웁니다.
+
+```js
+window.CLOUDINARY_CONFIG = {
+  cloudName: "dxxxxxxxx",
+  uploadPreset: "내가-만든-preset-이름"
+};
+```
+
+**5) 확인하기**
+
+- `upload.html`을 열었을 때 상단 안내문에 "웹툰 이미지 업로드(Cloudinary)도
+  연동되어 있어..."라는 문구가 보이고, 이미지 선택 칸이 활성화되어 있으면
+  연동이 완료된 것입니다.
+- 회차 추가 폼에서 세로로 긴 이미지를 선택하고 등록한 뒤 "회차 보기"를
+  누르면 실제 이미지가 뷰어에 표시됩니다.
+
+**참고**
+
+- 이미지는 최대 10MB까지 업로드할 수 있습니다(Cloudinary 무료 플랜 기준).
+- Unsigned 프리셋은 특성상 프리셋 이름만 알면 누구나 이 프리셋으로 이미지를
+  업로드할 수 있습니다(비밀키가 아니라 공개적으로 쓰이는 값입니다). 이 사이트처럼
+  로그인 없는 게시판 형태에서는 자연스러운 제약이지만, 남용이 걱정되면
+  Cloudinary 프리셋 설정의 **Eager Transformations**나 **Upload Manipulations**
+  에서 최대 이미지 크기(예: 가로/세로 픽셀 제한)를 지정해 두는 것을 권장합니다.
+- Cloudinary 무료 플랜은 월 25 크레딧(저장 용량·트래픽 합산 약 25GB 상당)을
+  제공합니다. 최신 한도는 Cloudinary 대시보드의 "Billing" 메뉴에서 확인하세요.
 
 ## 로컬에서 미리보기
 
@@ -225,11 +286,12 @@ webtoon-site/
 ├── css/
 │   └── style.css   레트로 테마 스타일
 ├── js/
-│   ├── data.js             시드 데이터 + localStorage/Firestore 저장소 유틸
-│   ├── firebase-config.js  Firebase 프로젝트 설정값 (업로드/좋아요/댓글 공유용, 선택)
-│   ├── main.js             index.html 로직
-│   ├── series.js           series.html 로직
-│   ├── viewer.js           viewer.html 로직
-│   └── upload.js           upload.html 로직
+│   ├── data.js               시드 데이터 + localStorage/Firestore 저장소 유틸
+│   ├── firebase-config.js    Firebase 프로젝트 설정값 (업로드/좋아요/댓글 공유용, 선택)
+│   ├── cloudinary-config.js  Cloudinary 설정값 (웹툰 이미지 업로드용, 선택)
+│   ├── main.js               index.html 로직
+│   ├── series.js             series.html 로직
+│   ├── viewer.js             viewer.html 로직
+│   └── upload.js             upload.html 로직
 └── .nojekyll
 ```

@@ -73,9 +73,13 @@
         <label class="field-label" for="e-date">등록일</label>
         <input type="date" id="e-date">
 
-        <label class="field-label" for="e-panels">컷(패널) 수</label>
+        <label class="field-label" for="e-image">웹툰 이미지 (세로로 긴 PNG/JPG, 선택)</label>
+        <input type="file" id="e-image" accept="image/png,image/jpeg,image/webp">
+        <p class="hint" id="e-image-hint">이미지를 올리면 회차 뷰어에 그 이미지가 그대로 세로 스크롤로 표시됩니다. 최대 10MB.</p>
+
+        <label class="field-label" for="e-panels">컷(패널) 수 (이미지를 안 올릴 때만 사용)</label>
         <input type="text" inputmode="numeric" id="e-panels" value="5" maxlength="2">
-        <p class="hint">실제 원고 이미지 대신 지정한 개수만큼 자리표시 패널이 세로로 표시됩니다.</p>
+        <p class="hint">이미지를 올리지 않으면, 지정한 개수만큼 자리표시 패널(색상 블록)이 대신 표시됩니다.</p>
 
         <div class="form-actions">
           <button type="submit" class="btn primary">회차 등록</button>
@@ -94,6 +98,7 @@
 <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
+<script src="js/cloudinary-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/upload.js"></script>
 </body>

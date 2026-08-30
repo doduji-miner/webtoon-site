@@ -515,6 +515,12 @@ legend {
   letter-spacing: 1px;
 }
 
+.panel-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .viewer-end {
   padding: 16px;
   text-align: center;
